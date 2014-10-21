@@ -21,27 +21,25 @@ int main()
   strcpy(charCmmdLine, commandLine.c_str());
   char connectors[] = "&|;";
   char *indvCommands;
-  indvCommands = strtok(charCmmdLine, connectors);
-
+  char *currCmmdLine;
+  indvCommands = strtok_r(charCmmdLine, connectors, &currCmmdLine);
 
   char **list = new char*[commandLine.length() + 1];
   for(unsigned i = 0; i < commandLine.length() + 1; i++){ list[i] = '\0';}
-
 
   while (indvCommands != NULL){
     if(strcmp(indvCommands,noRun) == 0){
       exit(EXIT_SUCCESS);
     }
-  if(true){
-    list[0] = strtok(indvCommands," ");
-    unsigned iterator = 1;
-    while(indvCommands != NULL && iterator < commandLine.length()+1){
-      list[iterator] = strtok(NULL," ");
-      iterator++;
+    if(true){
+      list[0] = strtok(indvCommands," ");
+      unsigned iterator = 1;
+      while(indvCommands != NULL && iterator < commandLine.length()+1){
+        list[iterator] = strtok(NULL," ");
+        iterator++;
+      }
     }
-  }
-    //list[0] = strtok(indvCommands," ");
-    //list[1] = strtok(NULL," ");
+
     pid_t childPID;
     childPID = fork();
     if(childPID >= 0){ //fork was successful
@@ -60,9 +58,11 @@ int main()
       perror("fork failed");
       exit(1);
     }
-    indvCommands = strtok(NULL, connectors);
+    indvCommands = strtok_r(NULL, connectors, &currCmmdLine);
   }
+
   delete [] charCmmdLine;
   delete [] list;
+
   return 0;
 }
