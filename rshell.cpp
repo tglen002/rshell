@@ -13,7 +13,7 @@ using namespace std;
 int main()
 {
   char* list[3] = {'\0'};
-  char noRun[5] = {'e','x','i','t','\0'};
+  char noRun[] = "exit";
   string commandLine;
   cout << "$ ";
   getline(cin,commandLine);
@@ -22,10 +22,9 @@ int main()
   char connectors[] = "&|;";
   char * indvCommands;
   indvCommands = strtok(charCmmdLine, connectors);
-  delete [] charCmmdLine;
 
   while (indvCommands != NULL){
-    if(strcmp(indvCommands,noRun)){
+    if(strcmp(indvCommands,noRun) == 0){
       exit(EXIT_SUCCESS);
     }
     list[0] = strtok(indvCommands," ");
@@ -50,6 +49,7 @@ int main()
     }
     indvCommands = strtok(NULL, connectors);
   }
+  delete [] charCmmdLine;
 
   return 0;
 }
