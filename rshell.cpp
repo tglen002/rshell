@@ -13,36 +13,35 @@ using namespace std;
 int main()
 {
   char* list[3] = {'\0'};
+  char noRun[5] = {'e','x','i','t','\0'};
   string commandLine;
   cout << "$ ";
   getline(cin,commandLine);
-  //cout << "output: " << commandLine << endl;
   char *charCmmdLine = new char[commandLine.length() + 1];
   strcpy(charCmmdLine, commandLine.c_str());
   char connectors[] = "&|;";
   char * indvCommands;
   indvCommands = strtok(charCmmdLine, connectors);
-  //if indivCommands = exit then exit the program
+  delete [] charCmmdLine;
 
   while (indvCommands != NULL){
-    //{ printf("%s\n", indvCommands); indvCommands = strtok(NULL,connectors);}
+    if(strcmp(indvCommands,noRun)){
+      exit(EXIT_SUCCESS);
+    }
     list[0] = strtok(indvCommands," ");
     list[1] = strtok(NULL," ");
     pid_t childPID;
     childPID = fork();
     if(childPID >= 0){ //fork was successful
       if(childPID == 0){ //child process
-      //contains execvp
-        //cout << "I am currently in the child" << endl;
         int r = execvp(list[0], list);
-	if(r == -1){
+        if(r == -1){
 	  perror("execvp failed");
 	  exit(1);
         }
       }
       else{ //parent process
         wait(NULL);
-        //cout << "I am currently in the parent" << endl;
       }
     }
     else{ // fork failed
@@ -51,11 +50,6 @@ int main()
     }
     indvCommands = strtok(NULL, connectors);
   }
-
-  delete [] charCmmdLine;
-  
-  //char *argv[2]; //need to change in order to fit unlimited number of calls
-  
 
   return 0;
 }
