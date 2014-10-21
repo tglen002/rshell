@@ -14,8 +14,9 @@ int main()
 {
   char noRun[] = "exit";
   char spaceNoRun[] = " exit";
+  char comment = '#';
 
-  while(true){
+  while(true){ //for multiple command lines
     cout << "$ ";
     fflush(stdout);
     string commandLine;
@@ -30,7 +31,7 @@ int main()
     char **list = new char*[commandLine.length() + 1];
     for(unsigned i = 0; i < commandLine.length() + 1; i++){ list[i] = '\0';}
 
-    while (indvCommands != NULL){
+    while (indvCommands != NULL){ //for multiple commands on one line
       if(strcmp(indvCommands,noRun) == 0 || strcmp(indvCommands,spaceNoRun) == 0){
         exit(EXIT_SUCCESS);
       }
@@ -42,7 +43,7 @@ int main()
           iterator++;
         }
       }
-
+      if(*list[0] == comment){break;} //if its commented dont run anything behind it on this line
       pid_t childPID;
       childPID = fork();
       if(childPID >= 0){ //fork was successful
@@ -62,9 +63,7 @@ int main()
         exit(1);
       }
       indvCommands = strtok_r(NULL, connectors, &currCmmdLine);
-      //cout << "\"" << indvCommands << "\""  << endl;
     }
-    //cout << endl;
     delete [] charCmmdLine;
     delete [] list;
   }
