@@ -1,0 +1,43 @@
+Script started on Tue 21 Oct 2014 11:44:54 PM PDT
+]0;glennhall@banach: ~/rshell/testsglennhall@banach:~/rshell/tests$ m[Kls
+exec.script
+]0;glennhall@banach: ~/rshell/testsglennhall@banach:~/rshell/tests$ cd ..
+]0;glennhall@banach: ~/rshellglennhall@banach:~/rshell$ ls
+Makefile  README.md  rshell.cpp  [0m[01;32mshelly[0m  [01;34mtests[0m
+]0;glennhall@banach: ~/rshellglennhall@banach:~/rshell$ make [K
+make: Nothing to be done for `all'.
+]0;glennhall@banach: ~/rshellglennhall@banach:~/rshell$ make run
+make: *** No rule to make target `run'.  Stop.
+]0;glennhall@banach: ~/rshellglennhall@banach:~/rshell$ ./sjel[K[K[Khelly
+$ ls
+Makefile  README.md  rshell.cpp  shelly  tests
+$ ls -a
+.  ..  .git  Makefile  README.md  rshell.cpp  shelly  tests
+$ ls -l -a
+total 108
+drwxr-xr-x  4 glennhall bazhlab  4096 Oct 21 23:44 .
+drwxr-xr-x 28 glennhall bazhlab 36864 Oct 21 23:43 ..
+drwxr-xr-x  8 glennhall bazhlab  4096 Oct 21 23:35 .git
+-rw-r--r--  1 glennhall bazhlab    88 Oct 21 22:52 Makefile
+-rw-r--r--  1 glennhall bazhlab   965 Oct 21 23:43 README.md
+-rw-r--r--  1 glennhall bazhlab  3446 Oct 21 23:34 rshell.cpp
+-rwxr-xr-x  1 glennhall bazhlab 47176 Oct 21 23:34 shelly
+drwxr-xr-x  2 glennhall bazhlab  4096 Oct 21 23:44 tests
+$ pwd
+/home/glennhall/rshell
+$ mkdir try
+$ ls
+Makefile  README.md  rshell.cpp  shelly  tests	try
+$ rm try
+rm: cannot remove `try': Is a directory
+$ rm -r try
+$ la s
+Makefile  README.md  rshell.cpp  shelly  tests
+$ ls; ehc    cho test; ls
+Makefile  README.md  rshell.cpp  shelly  tests
+Makefile  README.md  rshell.cpp  shelly  tests
+$ exit
+]0;glennhall@banach: ~/rshellglennhall@banach:~/rshell$ exit
+exit
+
+Script done on Tue 21 Oct 2014 11:47:20 PM PDT
