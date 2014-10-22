@@ -6,7 +6,9 @@
 #include<sys/wait.h>
 #include<errno.h>
 #include<iostream>
-
+#include<string>
+#include<vector>
+#include<algorithm>
 
 using namespace std;
 
@@ -15,9 +17,13 @@ int main()
   char noRun[] = "exit";
   char spaceNoRun[] = " exit";
   char comment = '#';
+  string prompt = "$ ";
+  unsigned numConnectors = 3;
+  string fullConnectors[] = {"&&", "||", ";"};
+
 
   while(true){ //for multiple command lines
-    cout << "$ ";
+    cout << prompt;
     fflush(stdout);
     string commandLine;
     getline(cin,commandLine);
@@ -31,6 +37,28 @@ int main()
     char **list = new char*[commandLine.length() + 1];
     for(unsigned i = 0; i < commandLine.length() + 1; i++){ list[i] = '\0';}
 
+
+    //determines where connectors are and what they are
+    vector<double> connectorsUsed;
+    for(unsigned numConnect = 0; numConnect < numConnectors; numConnect++){
+      size_t posCommandLine = 0;
+      size_t currPos = 0;
+      string subCommandLine = commandLine;
+      while(currPos != string::npos){
+        currPos = subCommandLine.find_first_of(fullConnectors[numConnect]);
+        if(currPos == string::npos){break;}
+        posCommandLine = posCommandLine + currPos;
+        connectorsUsed.push_back(posCommandLine+(double(numConnect)/double(10)));
+        string tempCommandLine = subCommandLine;
+        subCommandLine = tempCommandLine.substr(currPos+2);
+      }
+    }
+    stable_sort(connectorsUsed.begin(), connectorsUsed.end());
+    for(unsigned i = 0; i < connectorsUsed.size(); i++){
+      int temp = static_cast<int>(connectorsUsed.at(i));
+      connectorsUsed.at(i) = connectorsUsed.at(i) - temp;
+    }
+
     while (indvCommands != NULL){ //for multiple commands on one line
       if(strcmp(indvCommands,noRun) == 0 || strcmp(indvCommands,spaceNoRun) == 0){
         exit(EXIT_SUCCESS);
@@ -38,13 +66,15 @@ int main()
       if(true){
         list[0] = strtok(indvCommands," ");
         unsigned iterator = 1;
-        while(indvCommands != NULL && iterator < commandLine.length()+1){
+        while((indvCommands != NULL) && (iterator < commandLine.length()+1)){
           list[iterator] = strtok(NULL," ");
           iterator++;
         }
       }
-      if(*list[0] == comment){break;} //if its commented dont run anything behind it on this line
-      pid_t childPID;
+      
+      if(*list[0] == comment){break;} //check for comment
+
+      pid_t childPID; //fork section
       childPID = fork();
       if(childPID >= 0){ //fork was successful
         if(childPID == 0){ //child process
