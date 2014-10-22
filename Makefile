@@ -1,4 +1,7 @@
-all: shelly
+all: rshell
 
-shelly: rshell.cpp
-	g++ rshell.cpp -Wall -Werror -ansi -pedantic -o shelly
+rshell: rshell.cpp
+	g++ rshell.cpp -Wall -Werror -ansi -pedantic -o rshell
+	mkdir bin
+	cd bin; mkdir rshell
+	cp rshell bin/rshell
