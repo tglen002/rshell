@@ -59,10 +59,21 @@ int main()
       connectorsUsed.at(i) = connectorsUsed.at(i) - temp;
     }
 
+    //int numTokens = -1;
+    //int r = 0;
+    
     while (indvCommands != NULL){ //for multiple commands on one line
       if(strcmp(indvCommands,noRun) == 0 || strcmp(indvCommands,spaceNoRun) == 0){
         exit(EXIT_SUCCESS);
       }
+      //if(r == -2){break;}
+     // if(numTokens != -1){
+        //cout << "at the beginning" << endl;
+       // if(connectorsUsed.at(numTokens) == 0){if(r == -1){r = -2; break;}}
+       // else if(connectorsUsed.at(numTokens) == 0.1){if(r != -1){r = -2; break;}}
+       // cout << "at the end" << endl;
+      //}
+
       if(true){
         list[0] = strtok(indvCommands," ");
         unsigned iterator = 1;
@@ -71,21 +82,19 @@ int main()
           iterator++;
         }
       }
-      
       if(*list[0] == comment){break;} //check for comment
 
+      indvCommands = strtok_r(NULL, connectors, &currCmmdLine);
       pid_t childPID; //fork section
       childPID = fork();
       if(childPID >= 0){ //fork was successful
         if(childPID == 0){ //child process
           int r = execvp(list[0], list);
-          if(r == -1){
-	    perror("execvp failed");
-	    exit(1);
-          }
+          if(r == -1){perror("execvp failed"); exit(1);}
         }
         else{ //parent process
-          wait(NULL);
+          int r = wait(NULL);
+          if(r == -1){perror("wait failed"); exit(1);}
         }
       }
       else{ // fork failed
@@ -93,6 +102,7 @@ int main()
         exit(1);
       }
       indvCommands = strtok_r(NULL, connectors, &currCmmdLine);
+      //numTokens++;
     }
     delete [] charCmmdLine;
     delete [] list;
