@@ -59,32 +59,35 @@ int main()
       connectorsUsed.at(i) = connectorsUsed.at(i) - temp;
     }
 
-    //int numTokens = -1;
-    //int r = 0;
-    
+    //bool success = true; //states whether previous command on same line was successful
+    //unsigned lineConnectorNum = 0; //location within the connector line array
+    bool isComment = false;
+
     while (indvCommands != NULL){ //for multiple commands on one line
       if(strcmp(indvCommands,noRun) == 0 || strcmp(indvCommands,spaceNoRun) == 0){
         exit(EXIT_SUCCESS);
       }
-      //if(r == -2){break;}
-     // if(numTokens != -1){
-        //cout << "at the beginning" << endl;
-       // if(connectorsUsed.at(numTokens) == 0){if(r == -1){r = -2; break;}}
-       // else if(connectorsUsed.at(numTokens) == 0.1){if(r != -1){r = -2; break;}}
-       // cout << "at the end" << endl;
-      //}
+ 
+      if(isComment == true){break;}
+
+      unsigned iterator = 0;
 
       if(true){
         list[0] = strtok(indvCommands," ");
-        unsigned iterator = 1;
-        while((indvCommands != NULL) && (iterator < commandLine.length()+1)){
-          list[iterator] = strtok(NULL," ");
+        while((list[iterator] != NULL) && (iterator < commandLine.length()+1)){
           iterator++;
+          list[iterator] = strtok(NULL," ");
         }
       }
-      if(*list[0] == comment){break;} //check for comment
 
-      indvCommands = strtok_r(NULL, connectors, &currCmmdLine);
+      if(*list[0] == comment){break;} //check for comment
+      unsigned temp = 0;
+      //bool comm = false;
+      while(temp < iterator){
+        if(*list[temp] == comment){isComment = true;} //check for comment
+        if(isComment == true){list[temp] = NULL;}
+        temp++;
+      }
       pid_t childPID; //fork section
       childPID = fork();
       if(childPID >= 0){ //fork was successful
@@ -102,6 +105,7 @@ int main()
         exit(1);
       }
       indvCommands = strtok_r(NULL, connectors, &currCmmdLine);
+      if(indvCommands == NULL){break;}
       //numTokens++;
     }
     delete [] charCmmdLine;
