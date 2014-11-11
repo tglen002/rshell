@@ -56,11 +56,13 @@ int main()
     stable_sort(connectorsUsed.begin(), connectorsUsed.end());
     for(unsigned i = 0; i < connectorsUsed.size(); i++){
       int temp = static_cast<int>(connectorsUsed.at(i));
-      connectorsUsed.at(i) = connectorsUsed.at(i) - temp;
+      connectorsUsed.at(i) = 10 * (connectorsUsed.at(i) - temp);
+	cout << "connector " << i << " = " << connectorsUsed.at(i) << endl;
+
     }
 
     bool success = true; //states whether previous command on same line was successful
-    unsigned lineConnectorNum = -1; //location within the connector line array
+    unsigned lineConnectorNum = 0; //location within the connector line array
     bool isComment = false;
 
     while (indvCommands != NULL){ //for multiple commands on one line
@@ -89,12 +91,13 @@ int main()
       }
 
       bool run = true;
-      if(lineConnectorNum == -1){run = true;} //first element
-      else if((connectorsUsed.at(lineConnectorNum) == 0) && (success == true)){run = true;} //&&
-      else if((connectorsUsed.at(lineConnectorNum) == 1) && (success == true)){run = false;} //||
-      else{run = true;} //;
+      if(lineConnectorNum == 0){run = true;} //first element
+      else if((connectorsUsed.at(lineConnectorNum - 1) == 0) && (success == true)){cout << "processed as &&" << endl; run = true;} //&&
+      else if((connectorsUsed.at(lineConnectorNum - 1) == 1) && (success == true)){cout << "processed as ||" << endl; run = false;} //||
+      else if(connectorsUsed.at(lineConnectorNum - 1) == 2){cout << "processed as ;" << endl; run = true;} //;
+      else{cout << "untracked connector: connect " << connectorsUsed.at(lineConnectorNum - 1) << ", success " << success << endl; run = true;}
 
-      cout << "Run1? " << run << endl;
+      cout << "Run1? " << success << endl;
 
       if(run == true){
         pid_t childPID; //fork section
@@ -116,7 +119,7 @@ int main()
       }
       indvCommands = strtok_r(NULL, connectors, &currCmmdLine);
       lineConnectorNum++; //moving to the next connector in array
-      cout << "Run? " << run << endl;
+      cout << "Run? " << success << endl;
 
       if(indvCommands == NULL){break;}
     }
