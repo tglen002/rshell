@@ -10,6 +10,9 @@
 #include<string>
 #include<algorithm>
 #include<iomanip>
+#include<pwd.h>
+#include<grp.h>
+#include<time.h>
 
 using namespace std;
 
@@ -20,10 +23,13 @@ const int FLAG_R = 2;
 const char FLAG_SYMBOL = '-';
 const int SCREEN_SIZE = 65;
 const int EMPTY_SPACE_BETWEEN_WORDS = 1;
+const string MONTH[] = {"Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"};
+const char READ = 'r';
+const char WRITE = 'w';
+const char EXECUTE = 'x';
 
 
 void whatFlags(int *flag_array, int argc, char **argv){
-	//for(int i = 0; i < NUM_FLAGS; i++) flag_array[i] = 0;
 	for(int i = 0; i < argc; i++){
 		if(argv[i][0] == FLAG_SYMBOL){
 			for(int j = 0; j < strlen(argv[i]); j++){
@@ -59,12 +65,61 @@ bool compareWordsInsensitiveToCase(const string &wordOne, const string &wordTwo)
 		return lexicographical_compare(wordOne.begin(), wordOne.end(), wordTwo.begin(), wordTwo.end(), caseInsensitive());
 }
 
-void lOutput(vector<string> &names, unsigned longest_name){
+void lOutput(vector<string> &names, unsigned longest_name, string curr_dir){
 	struct stat buf;
+	int total_blocks = 0;
+
 	for(int i = 0; i < names.size(); i++){
-		stat(names.at(i).c_str(), &buf);
-		cout << buf.st_uid << " ";
-		cout << buf.st_gid;
+		string full_name = curr_dir + "/" + names.at(i);
+		int error = stat(full_name.c_str(), &buf);
+		if(error == -1){perror("stat failed"); exit(1);};
+		total_blocks += buf.st_blocks;
+	}
+
+	cout << "total " << total_blocks/2 << endl;
+
+	for(int i = 0; i < names.size(); i++){
+		string full_name = curr_dir + "/" + names.at(i);
+		int error = stat(full_name.c_str(), &buf);
+		if(error == -1){perror("stat failed"); exit(1);}
+		if(S_ISDIR(buf.st_mode) == true){cout << "d";}
+		else{cout << FLAG_SYMBOL;}
+		if(buf.st_mode & S_IRUSR){cout << READ;}
+		else{cout << FLAG_SYMBOL;}
+		if(buf.st_mode & S_IWUSR){cout << WRITE;}
+		else{cout << FLAG_SYMBOL;}
+		if(buf.st_mode & S_IXUSR){cout << EXECUTE;}
+		else{cout << FLAG_SYMBOL;}
+		if(buf.st_mode & S_IRGRP){cout << READ;}
+		else{cout << FLAG_SYMBOL;}
+		if(buf.st_mode & S_IWGRP){cout << WRITE;}
+		else{cout << FLAG_SYMBOL;}
+		if(buf.st_mode & S_IXGRP){cout << EXECUTE;}
+		else{cout << FLAG_SYMBOL;}
+		if(buf.st_mode & S_IROTH){cout << READ;}
+		else{cout << FLAG_SYMBOL;}
+		if(buf.st_mode & S_IWOTH){cout << WRITE;}
+		else{cout << FLAG_SYMBOL;}
+		if(buf.st_mode & S_IXOTH){cout << EXECUTE;}
+		else{cout << FLAG_SYMBOL;}
+		cout << " " << buf.st_nlink;
+		struct passwd *user = getpwuid(buf.st_uid);
+		if(user == NULL){perror("getpwuid failed"); exit(1);}
+		cout << " " << user->pw_name;
+		struct group *gr = getgrgid(buf.st_gid);
+		if(gr == NULL){perror("getgrgid failed"); exit(1);}
+		cout << " " << gr->gr_name;
+		cout << " " << buf.st_size;
+		struct tm *clock = localtime(&(buf.st_mtime));
+		if(clock == NULL){perror("gmtime failed"); exit(1);}
+		clock->tm_isdst = -1;
+		cout << " " << MONTH[clock->tm_mon];
+		cout << " " << clock->tm_mday;
+		if(clock->tm_hour < 10){cout << " 0" << clock->tm_hour;}
+		else{cout << " " << clock->tm_hour;}
+		if(clock->tm_min < 10){cout << ":0" << clock->tm_min;}
+		else{cout << ":" << clock->tm_min;}
+		cout << " " << names.at(i);
 		cout << endl;
 	}
 	return;
@@ -94,13 +149,17 @@ void non_lOutput(vector<string> &names, unsigned longest_name){
 	return;
 }
 
-void listContents(char *dirName, vector<string> &names, int *flag_array){
-        DIR *dirp = opendir(dirName);
+void listContents(string dirName, int *flag_array){
+	if(flag_array[FLAG_R] == 1){cout << dirName << ":" << endl;}
+	vector<string> names;
+        DIR *dirp = opendir(dirName.c_str());
+	if(dirp == NULL){perror("opendir failed"); exit(1);}
 	dirent *direntp;
 
 	int i = 0;
 	unsigned longest_name = 0;
 	while(direntp = readdir(dirp)){
+		if(direntp == NULL){perror("readdir failed"); exit(1);}
 		if((flag_array[FLAG_a] == 0) && (direntp->d_name[0] == '.'))
 			{continue;}
 		names.push_back(direntp->d_name);
@@ -110,17 +169,31 @@ void listContents(char *dirName, vector<string> &names, int *flag_array){
 		i++;
 	}
 	sort(names.begin(), names.end(), compareWordsInsensitiveToCase);
-	if(flag_array[FLAG_l] == 1) {lOutput(names, longest_name);}
+	if(flag_array[FLAG_l] == 1) {lOutput(names, longest_name, dirName);}
         else {non_lOutput(names, longest_name);}
 	closedir(dirp);
+	if(flag_array[FLAG_R] == 1){
+		cout << endl;
+		if(flag_array[FLAG_a] == 1){i = 2;}
+		else{i = 0;}
+		for(i; i < names.size(); i ++){
+			struct stat buf;
+			string possible_dir = dirName + "/" + names.at(i);
+			int error = stat(possible_dir.c_str(), &buf);
+			if(error == -1){perror("stat failed"); exit(1);}
+			if(S_ISDIR(buf.st_mode) == true){
+				listContents(possible_dir, flag_array);
+			}
+		}
+	}
+	return;
 }
 
 int main(int argc, char **argv){
 	int flag_array[NUM_FLAGS];
-	for(int i = 0; i < NUM_FLAGS; i++) flag_array[i] = 0;
+	for(int i = 0; i < NUM_FLAGS; i++) {flag_array[i] = 0;}
 	whatFlags(flag_array, argc, argv);
-	char dirName[] = ".";
-	vector<string> names;
-	listContents(dirName, names, flag_array);
+	string dirName = ".";
+	listContents(dirName, flag_array);
 	return(0);
 }
