@@ -135,7 +135,7 @@ void non_lOutput(vector<string> &names, unsigned longest_name){
 	total_lines = (names.size()/words_per_line);
 	unsigned int line = 0;
 	while(line < total_lines){
-		int i = 0;
+		unsigned int i = 0;
 		while(i < (names.size())){
 			if((i+line) < names.size()){
 				cerr << setw(space_per_word) << left << names.at(i+line);
