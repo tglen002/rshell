@@ -69,8 +69,8 @@ The program expects an input and output file listed in the command line. It will
 
 Bugs:
 <ol>
-  <li>if an input file is given but not an output file, unknown behavior</li>
-  <li>if output is missing but method is given, the program will assume method(true) is the name of the output file, as such a new file named 1 will appear</li>
+  <li>the method variable is the third variable, code requirements assume method can be places anywhere, but instead you can write anything in the 3rd parameter and get the method output</li>
+  <li>if output is missing but method is given, the program will assume method is the name of the output file</li>
 </ol>
 
 

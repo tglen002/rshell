@@ -97,7 +97,7 @@ int main(int argc, char* argv[])
 
 		int num = 0;
 
-		while(num = read(fdi,buf,1)){
+		while((num = read(fdi,buf,1))){
 			if(num == -1){perror("read input failed"); exit(1);}
 			int wnum = write(fdo,buf,1);
 			if(wnum == -1){perror("write output failed"); exit(1);}
@@ -126,7 +126,7 @@ int main(int argc, char* argv[])
 	int fdo2 = open(output.c_str(),O_WRONLY);
 	if(fdo2 == -1){ perror("open fdo2 failed"); exit(1);}
 	
-	while(num2 = read(fdi2,buff,BUFSIZ)){
+	while((num2 = read(fdi2,buff,BUFSIZ))){
 		if(num2 == -1){ perror("fdi2 read failed"); exit(1);}
 		int wnum2 = write(fdo2,buff,num2);
 		if(wnum2 == -1){ perror("fdo2 write failed"); exit(1);}
