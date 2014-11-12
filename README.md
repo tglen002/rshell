@@ -1,7 +1,7 @@
 rshell
 ======
 
-Project sourse can be downloaded from https://github.com/tglen002/rshell.git
+Project source can be downloaded from https://github.com/tglen002/rshell.git
 -----------
 
 Authors and Contributors List
@@ -12,10 +12,10 @@ How to run file
 ----------------
 
 Once you have cloned the directory to your local machine, follow the directions below:
-1. cd rshell
-2. make
-3. cd bin
-4. ./rshell
+* cd rshell
+* make
+* cd bin
+* ./rshell
 
 Program overview:
 This program was written to implement a simple version of command shell called rshell.
