@@ -12,10 +12,12 @@ How to run file
 ----------------
 
 Once you have cloned the directory to your local machine, follow the directions below:
-* cd rshell
-* make
-* cd bin
-* ./rshell
+<ol>
+  <li>cd rshell</li>
+  <li>make</li>
+  <li>cd bin</li>
+  <li>./rshell</li>
+</ol>
 
 Program overview:
 This program was written to implement a simple version of command shell called rshell.
