@@ -56,53 +56,72 @@ int main()
     stable_sort(connectorsUsed.begin(), connectorsUsed.end());
     for(unsigned i = 0; i < connectorsUsed.size(); i++){
       int temp = static_cast<int>(connectorsUsed.at(i));
-      connectorsUsed.at(i) = connectorsUsed.at(i) - temp;
+      connectorsUsed.at(i) = 10 * (connectorsUsed.at(i) - temp);
+	cout << "connector " << i << " = " << connectorsUsed.at(i) << endl;
+
     }
 
-    //int numTokens = -1;
-    //int r = 0;
-    
+    bool success = true; //states whether previous command on same line was successful
+    unsigned lineConnectorNum = 0; //location within the connector line array
+    bool isComment = false;
+
     while (indvCommands != NULL){ //for multiple commands on one line
       if(strcmp(indvCommands,noRun) == 0 || strcmp(indvCommands,spaceNoRun) == 0){
         exit(EXIT_SUCCESS);
       }
-      //if(r == -2){break;}
-     // if(numTokens != -1){
-        //cout << "at the beginning" << endl;
-       // if(connectorsUsed.at(numTokens) == 0){if(r == -1){r = -2; break;}}
-       // else if(connectorsUsed.at(numTokens) == 0.1){if(r != -1){r = -2; break;}}
-       // cout << "at the end" << endl;
-      //}
+ 
+      if(isComment == true){break;}
+
+      unsigned iterator = 0;
 
       if(true){
         list[0] = strtok(indvCommands," ");
-        unsigned iterator = 1;
-        while((indvCommands != NULL) && (iterator < commandLine.length()+1)){
-          list[iterator] = strtok(NULL," ");
+        while((list[iterator] != NULL) && (iterator < commandLine.length()+1)){
           iterator++;
+          list[iterator] = strtok(NULL," ");
         }
       }
-      if(*list[0] == comment){break;} //check for comment
 
-      indvCommands = strtok_r(NULL, connectors, &currCmmdLine);
-      pid_t childPID; //fork section
-      childPID = fork();
-      if(childPID >= 0){ //fork was successful
-        if(childPID == 0){ //child process
-          int r = execvp(list[0], list);
-          if(r == -1){perror("execvp failed"); exit(1);}
+      if(*list[0] == comment){break;} //check for comment
+      unsigned temp = 0;
+      while(temp < iterator){
+        if(*list[temp] == comment){isComment = true;} //check for comment
+        if(isComment == true){list[temp] = NULL;}
+        temp++;
+      }
+
+      bool run = true;
+      if(lineConnectorNum == 0){run = true;} //first element
+      else if((connectorsUsed.at(lineConnectorNum - 1) == 0) && (success == true)){cout << "processed as &&" << endl; run = true;} //&&
+      else if((connectorsUsed.at(lineConnectorNum - 1) == 1) && (success == true)){cout << "processed as ||" << endl; run = false;} //||
+      else if(connectorsUsed.at(lineConnectorNum - 1) == 2){cout << "processed as ;" << endl; run = true;} //;
+      else{cout << "untracked connector: connect " << connectorsUsed.at(lineConnectorNum - 1) << ", success " << success << endl; run = true;}
+
+      cout << "Run1? " << success << endl;
+
+      if(run == true){
+        pid_t childPID; //fork section
+        childPID = fork();
+        if(childPID >= 0){ //fork was successful
+          if(childPID == 0){ //child process
+            int r = execvp(list[0], list);
+            if(r == -1){success = false; perror("execvp failed"); exit(1);}
+          }
+          else{ //parent process
+            int r = wait(NULL);
+            if(r == -1){perror("wait failed"); exit(1);}
+          }
         }
-        else{ //parent process
-          int r = wait(NULL);
-          if(r == -1){perror("wait failed"); exit(1);}
+        else{ // fork failed
+          perror("fork failed");
+          exit(1);
         }
       }
-      else{ // fork failed
-        perror("fork failed");
-        exit(1);
-      }
       indvCommands = strtok_r(NULL, connectors, &currCmmdLine);
-      //numTokens++;
+      lineConnectorNum++; //moving to the next connector in array
+      cout << "Run? " << success << endl;
+
+      if(indvCommands == NULL){break;}
     }
     delete [] charCmmdLine;
     delete [] list;
