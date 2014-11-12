@@ -32,7 +32,7 @@ const char EXECUTE = 'x';
 void whatFlags(int *flag_array, int argc, char **argv){
 	for(int i = 0; i < argc; i++){
 		if(argv[i][0] == FLAG_SYMBOL){
-			for(int j = 0; j < strlen(argv[i]); j++){
+			for(unsigned int j = 0; j < strlen(argv[i]); j++){
 				switch(argv[i][j]){
 					case 'a':
 						flag_array[FLAG_a] = 1; continue;
@@ -69,7 +69,7 @@ void lOutput(vector<string> &names, unsigned longest_name, string curr_dir){
 	struct stat buf;
 	int total_blocks = 0;
 
-	for(int i = 0; i < names.size(); i++){
+	for(unsigned int i = 0; i < names.size(); i++){
 		string full_name = curr_dir + "/" + names.at(i);
 		int error = stat(full_name.c_str(), &buf);
 		if(error == -1){perror("stat failed"); exit(1);};
@@ -78,7 +78,7 @@ void lOutput(vector<string> &names, unsigned longest_name, string curr_dir){
 
 	cout << "total " << total_blocks/2 << endl;
 
-	for(int i = 0; i < names.size(); i++){
+	for(unsigned int i = 0; i < names.size(); i++){
 		string full_name = curr_dir + "/" + names.at(i);
 		int error = stat(full_name.c_str(), &buf);
 		if(error == -1){perror("stat failed"); exit(1);}
@@ -126,14 +126,14 @@ void lOutput(vector<string> &names, unsigned longest_name, string curr_dir){
 }
 
 void non_lOutput(vector<string> &names, unsigned longest_name){
-	int space_per_word = longest_name + EMPTY_SPACE_BETWEEN_WORDS;
-	int words_per_line = SCREEN_SIZE/(space_per_word);
-	int total_lines = (names.size()/words_per_line) + 1;
+	unsigned int space_per_word = longest_name + EMPTY_SPACE_BETWEEN_WORDS;
+	unsigned int words_per_line = SCREEN_SIZE/(space_per_word);
+	unsigned int total_lines = (names.size()/words_per_line) + 1;
 	for(int i = words_per_line; i > 0; i--){
 		if(names.size()%i < total_lines){words_per_line = i; break;}
 	}
 	total_lines = (names.size()/words_per_line);
-	int line = 0;
+	unsigned int line = 0;
 	while(line < total_lines){
 		int i = 0;
 		while(i < (names.size())){
@@ -156,9 +156,9 @@ void listContents(string dirName, int *flag_array){
 	if(dirp == NULL){perror("opendir failed"); exit(1);}
 	dirent *direntp;
 
-	int i = 0;
+	unsigned int i = 0;
 	unsigned longest_name = 0;
-	while(direntp = readdir(dirp)){
+	while((direntp = readdir(dirp))){
 		if(direntp == NULL){perror("readdir failed"); exit(1);}
 		if((flag_array[FLAG_a] == 0) && (direntp->d_name[0] == '.'))
 			{continue;}
@@ -176,7 +176,7 @@ void listContents(string dirName, int *flag_array){
 		cout << endl;
 		if(flag_array[FLAG_a] == 1){i = 2;}
 		else{i = 0;}
-		for(i; i < names.size(); i ++){
+		while(i < names.size()){
 			struct stat buf;
 			string possible_dir = dirName + "/" + names.at(i);
 			int error = stat(possible_dir.c_str(), &buf);
@@ -184,6 +184,7 @@ void listContents(string dirName, int *flag_array){
 			if(S_ISDIR(buf.st_mode) == true){
 				listContents(possible_dir, flag_array);
 			}
+			i++;
 		}
 	}
 	return;
