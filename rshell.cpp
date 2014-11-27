@@ -12,20 +12,57 @@
 
 using namespace std;
 
+#define ANDCONNECTOR 0
+#define ORCONNECTOR 1
+#define SEMICOLON 2
+
+const string PROMPT = "$MONEY$: ";
+const char COMMENT = '#';
+const char NoRun[] = "exit";
+const char SpaceNoRun[] = " exit";
+const unsigned NumConnectors = 3;
+const string FullConnectors[] = {"&&", "||", ";"};
+
+void ConnectorsUsed(string commandLine, vector<double> &connectorsUsed){
+    for(unsigned numConnect = 0; numConnect < NumConnectors; numConnect++){
+      size_t posCommandLine = 0;
+      size_t currPos = 0;
+      string subCommandLine = commandLine;
+      while(currPos != string::npos){
+        currPos = subCommandLine.find_first_of(FullConnectors[numConnect]);
+        if(currPos == string::npos){break;}
+        if(currPos == 0){cout << "syntax error near unextected token '"
+            << FullConnectors[numConnect] << "'" << endl;
+            exit(1);
+        }
+	if((currPos == commandLine.length() - 2) && (numConnect <= ORCONNECTOR)){continue;}
+	if((currPos == commandLine.length() - 1) && (numConnect == SEMICOLON)){break;}
+        posCommandLine = posCommandLine + currPos;
+        connectorsUsed.push_back(posCommandLine+(double(numConnect)/double(10)));
+        string tempCommandLine = subCommandLine;
+        subCommandLine = tempCommandLine.substr(currPos+2);
+      }
+    }
+    stable_sort(connectorsUsed.begin(), connectorsUsed.end());
+    double tempConnectorValue = 0.0;
+    for(unsigned i = 0; i < connectorsUsed.size(); i++){
+      int temp = static_cast<int>(connectorsUsed.at(i));
+      tempConnectorValue = 10 * (connectorsUsed.at(i) - temp);
+      if(tempConnectorValue < 0.5){connectorsUsed.at(i) = ANDCONNECTOR;}
+      else if((tempConnectorValue >= 0.5) && (tempConnectorValue < 1.5)){
+          connectorsUsed.at(i) = ORCONNECTOR; }
+      else{connectorsUsed.at(i) = SEMICOLON;}
+        cout << "connector " << i << " = " << connectorsUsed.at(i) << endl;
+
+    }
+}
+
 int main()
 {
-  char noRun[] = "exit";
-  char spaceNoRun[] = " exit";
-  char comment = '#';
-  string prompt = "$ ";
-  unsigned numConnectors = 3;
-  string fullConnectors[] = {"&&", "||", ";"};
-
-
   while(true){ //for multiple command lines
-    cout << prompt;
-    fflush(stdout);
     string commandLine;
+    cout << PROMPT;
+    fflush(stdout);
     getline(cin,commandLine);
     char *charCmmdLine = new char[commandLine.length() + 1];
     strcpy(charCmmdLine, commandLine.c_str());
@@ -40,33 +77,15 @@ int main()
 
     //determines where connectors are and what they are
     vector<double> connectorsUsed;
-    for(unsigned numConnect = 0; numConnect < numConnectors; numConnect++){
-      size_t posCommandLine = 0;
-      size_t currPos = 0;
-      string subCommandLine = commandLine;
-      while(currPos != string::npos){
-        currPos = subCommandLine.find_first_of(fullConnectors[numConnect]);
-        if(currPos == string::npos){break;}
-        posCommandLine = posCommandLine + currPos;
-        connectorsUsed.push_back(posCommandLine+(double(numConnect)/double(10)));
-        string tempCommandLine = subCommandLine;
-        subCommandLine = tempCommandLine.substr(currPos+2);
-      }
-    }
-    stable_sort(connectorsUsed.begin(), connectorsUsed.end());
-    for(unsigned i = 0; i < connectorsUsed.size(); i++){
-      int temp = static_cast<int>(connectorsUsed.at(i));
-      connectorsUsed.at(i) = 10 * (connectorsUsed.at(i) - temp);
-	cout << "connector " << i << " = " << connectorsUsed.at(i) << endl;
-
-    }
+    ConnectorsUsed(commandLine, connectorsUsed);
+    //if //if the last object is a connector get more input
 
     bool success = true; //states whether previous command on same line was successful
-    unsigned lineConnectorNum = 0; //location within the connector line array
+    int lineConnectorNum = 0; //location within the connector line array
     bool isComment = false;
 
     while (indvCommands != NULL){ //for multiple commands on one line
-      if(strcmp(indvCommands,noRun) == 0 || strcmp(indvCommands,spaceNoRun) == 0){
+      if(strcmp(indvCommands,NoRun) == 0 || strcmp(indvCommands,SpaceNoRun) == 0){
         exit(EXIT_SUCCESS);
       }
  
@@ -82,30 +101,44 @@ int main()
         }
       }
 
-      if(*list[0] == comment){break;} //check for comment
+      if(*list[0] == COMMENT){break;} //check for comment
       unsigned temp = 0;
       while(temp < iterator){
-        if(*list[temp] == comment){isComment = true;} //check for comment
+        if(*list[temp] == COMMENT){isComment = true;} //check for comment
         if(isComment == true){list[temp] = NULL;}
         temp++;
       }
 
       bool run = true;
+cout << "success top: " << success << endl;
       if(lineConnectorNum == 0){run = true;} //first element
-      else if((connectorsUsed.at(lineConnectorNum - 1) == 0) && (success == true)){cout << "processed as &&" << endl; run = true;} //&&
-      else if((connectorsUsed.at(lineConnectorNum - 1) == 1) && (success == true)){cout << "processed as ||" << endl; run = false;} //||
-      else if(connectorsUsed.at(lineConnectorNum - 1) == 2){cout << "processed as ;" << endl; run = true;} //;
+      else if((connectorsUsed.at(lineConnectorNum - 1) == ANDCONNECTOR) && (success == true)){
+		cout << "processed as &&: connect " << connectorsUsed.at(lineConnectorNum - 1) << ", success " << success << endl;
+		run = true;} //&&
+      else if((connectorsUsed.at(lineConnectorNum - 1) == ANDCONNECTOR) && (success == false)){
+		cout << "processed as &&: connect " << connectorsUsed.at(lineConnectorNum - 1) << ", success " << success << endl;
+		if(lineConnectorNum - 2 > 0){
+			cerr << "current position: " << lineConnectorNum - 2 << endl;
+			 if(connectorsUsed.at(lineConnectorNum - 2) == ORCONNECTOR){run = true;}
+		}
+		else{run = false;} 
+      }
+      else if((connectorsUsed.at(lineConnectorNum - 1) == ORCONNECTOR) && (success == true)){
+		cout << "processed as ||: connect " << connectorsUsed.at(lineConnectorNum - 1) << ", success " << success << endl; 
+		run = false;} //||
+      else if(connectorsUsed.at(lineConnectorNum - 1) == SEMICOLON){cout << "processed as ;" << endl; run = true;} //;
       else{cout << "untracked connector: connect " << connectorsUsed.at(lineConnectorNum - 1) << ", success " << success << endl; run = true;}
 
-      cout << "Run1? " << success << endl;
-
+      int failure = -1;
       if(run == true){
         pid_t childPID; //fork section
         childPID = fork();
         if(childPID >= 0){ //fork was successful
           if(childPID == 0){ //child process
-            int r = execvp(list[0], list);
-            if(r == -1){success = false; perror("execvp failed"); exit(1);}
+            int failure = execvp(list[0], list);
+	    cout << "success1: " << success << " failure: " << failure << endl;
+            if(failure == -1){success = false; perror("execvp failed"); exit(1);}
+	    //if(r == -1){success = false;}
           }
           else{ //parent process
             int r = wait(NULL);
@@ -119,7 +152,8 @@ int main()
       }
       indvCommands = strtok_r(NULL, connectors, &currCmmdLine);
       lineConnectorNum++; //moving to the next connector in array
-      cout << "Run? " << success << endl;
+      if(failure == -1){success = false;}
+      cout << "success2: " << success << " failure: " << failure << endl;
 
       if(indvCommands == NULL){break;}
     }
