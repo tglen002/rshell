@@ -77,6 +77,39 @@ void ConnectorsUsed(string commandLine, vector<int> &connectorsUsed){
     }
 }
 
+//run
+int Run(char **list){
+	int failure = 0;
+	int communication[2];
+	pipe(communication);
+        pid_t childPID; //fork section
+        childPID = fork();
+        if(childPID >= 0){ //fork was successful
+          if(childPID == 0){ //child process
+	    close(communication[0]);
+            failure = execvp(list[0], list);
+	    write(communication[1], &failure, sizeof(failure));
+	    close(communication[1]);
+            if(failure == -1){perror("execvp failed"); exit(1);}
+          }
+          else{ //parent process
+	    close(communication[1]);
+            int r = wait(NULL);
+            if(r == -1){perror("wait failed"); exit(1);}
+	    read(communication[0], &failure, sizeof(failure));
+	    close(communication[0]);
+	    if(failure == 0){}
+	    else{failure = -1;}
+          }
+        }
+        else{ // fork failed
+          perror("fork failed");
+          exit(1);
+        }
+	return failure;
+}
+
+
 int main()
 {
   while(true){ //for multiple command lines
@@ -86,7 +119,7 @@ int main()
     getline(cin,commandLine);
     char *charCmmdLine = new char[commandLine.length() + 1];
     strcpy(charCmmdLine, commandLine.c_str());
-    char connectors[] = "&|;";
+    char connectors[] = "&|<>;";
     char *indvCommands;
     char *currCmmdLine;
     indvCommands = strtok_r(charCmmdLine, connectors, &currCmmdLine);
@@ -108,6 +141,7 @@ int main()
       if(strcmp(indvCommands,NoRun) == 0 || strcmp(indvCommands,SpaceNoRun) == 0){
         exit(EXIT_SUCCESS);
       }
+cout << "command chunk: " << indvCommands << endl;
  
       if(isComment == true){break;}
 
@@ -130,50 +164,37 @@ int main()
       }
 
       bool run = true;
-cout << "success top: " << success << endl;
+//cout << "success top: " << success << endl;
       if(lineConnectorNum == 0){run = true;} //first element
       else if((connectorsUsed.at(lineConnectorNum - 1) == ANDCONNECTOR) && (success == true)){
-		cout << "processed as &&: connect " << connectorsUsed.at(lineConnectorNum - 1) << ", success " << success << endl;
+		cout << "processed as &&: success == true" << endl;
 		run = true;} //&&
       else if((connectorsUsed.at(lineConnectorNum - 1) == ANDCONNECTOR) && (success == false)){
-		cout << "processed as &&: connect " << connectorsUsed.at(lineConnectorNum - 1) << ", success " << success << endl;
 		if(lineConnectorNum - 2 > 0){
-			cerr << "current position: " << lineConnectorNum - 2 << endl;
-			 if(connectorsUsed.at(lineConnectorNum - 2) == ORCONNECTOR){run = true;}
+			 if(connectorsUsed.at(lineConnectorNum - 2) == ORCONNECTOR){
+				cout << "processed as &&, previous connector == ||, success == false" << endl; 
+				run = true;}
+			else{run = false;}
 		}
 		else{run = false;} 
       }
       else if((connectorsUsed.at(lineConnectorNum - 1) == ORCONNECTOR) && (success == true)){
-		cout << "processed as ||: connect " << connectorsUsed.at(lineConnectorNum - 1) << ", success " << success << endl; 
+		cout << "processed as ||: success == true" << endl; 
 		run = false;} //||
+      else if((connectorsUsed.at(lineConnectorNum - 1) == ORCONNECTOR) && (success == false)){
+		cout << "processed as ||: success == false" << endl;
+		run = true;}
       else if(connectorsUsed.at(lineConnectorNum - 1) == SEMICOLON){cout << "processed as ;" << endl; run = true;} //;
       else{cout << "untracked connector: connect " << connectorsUsed.at(lineConnectorNum - 1) << ", success " << success << endl; run = true;}
 
       int failure = 0;
       if(run == true){
-        pid_t childPID; //fork section
-        childPID = fork();
-        if(childPID >= 0){ //fork was successful
-          if(childPID == 0){ //child process
-            failure = execvp(list[0], list);
-	    cout << "success1: " << success << " failure: " << failure << endl;
-            if(failure == -1){success = false; perror("execvp failed"); exit(1);}
-	    //if(r == -1){success = false;}
-          }
-          else{ //parent process
-            int r = wait(NULL);
-            if(r == -1){perror("wait failed"); exit(1);}
-          }
-        }
-        else{ // fork failed
-          perror("fork failed");
-          exit(1);
-        }
+	  failure = Run(list);
       }
       indvCommands = strtok_r(NULL, connectors, &currCmmdLine);
       lineConnectorNum++; //moving to the next connector in array
       if(failure == -1){success = false;}
-      cout << "success2: " << success << " failure: " << failure << endl;
+  //    cout << "success2: " << success << " failure: " << failure << endl;
 
       if(indvCommands == NULL){break;}
     }
