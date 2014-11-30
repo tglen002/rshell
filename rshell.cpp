@@ -26,7 +26,8 @@ const char SpaceNoRun[] = " exit";
 const unsigned NumConnectors = 6;
 const string FullConnectors[] = {"&&", "||", "|", "<", ">", ";"};
 
-void ConnectorsUsed(string commandLine, vector<double> &connectorsUsed){
+void ConnectorsUsed(string commandLine, vector<int> &connectorsUsed){
+    vector<double> connectorAndPos;
     for(unsigned numConnect = 0; numConnect < NumConnectors; numConnect++){
       size_t posCommandLine = 0;
       size_t currPos = 0;
@@ -42,35 +43,35 @@ void ConnectorsUsed(string commandLine, vector<double> &connectorsUsed){
 	else if((currPos == commandLine.length() - 1) && (numConnect < SEMICOLON)){continue;}
 	else if((currPos == commandLine.length() - 1) && (numConnect == SEMICOLON)){break;}
         posCommandLine = posCommandLine + currPos;
-        connectorsUsed.push_back(posCommandLine+(double(numConnect)/double(10)));
+        connectorAndPos.push_back(posCommandLine+(double(numConnect)/double(10)));
         string tempCommandLine = subCommandLine;
         subCommandLine = tempCommandLine.substr(currPos+2);
 	cout << "pos and conn: " << posCommandLine+(double(numConnect)/double(10)) << endl;
       }
     }
-    stable_sort(connectorsUsed.begin(), connectorsUsed.end());
+    stable_sort(connectorAndPos.begin(), connectorAndPos.end());
     double connectorValue = 0.0;
-    for(unsigned i = 0; i < connectorsUsed.size(); i++){
-      int temp = static_cast<int>(connectorsUsed.at(i));
-      if(i < connectorsUsed.size() - 1){
-      		if(int(connectorsUsed.at(i)) == int(connectorsUsed.at(i+1))){
-			if(connectorsUsed.at(i) < connectorsUsed.at(i+1))
-				{connectorsUsed.erase(connectorsUsed.begin()+(i+1));}
-			else{connectorsUsed.erase(connectorsUsed.begin()+i);}
+    for(unsigned i = 0; i < connectorAndPos.size(); i++){
+      int temp = static_cast<int>(connectorAndPos.at(i));
+      if(i < connectorAndPos.size() - 1){
+      		if(int(connectorAndPos.at(i)) == int(connectorAndPos.at(i+1))){
+			if(connectorAndPos.at(i) < connectorAndPos.at(i+1))
+				{connectorAndPos.erase(connectorAndPos.begin()+(i+1));}
+			else{connectorAndPos.erase(connectorAndPos.begin()+i);}
 		}
       }
-      connectorValue = 10 * (connectorsUsed.at(i) - temp);
+      connectorValue = 10 * (connectorAndPos.at(i) - temp);
       if((connectorValue < ANDCONNECTOR + 0.5) && (connectorValue > ANDCONNECTOR - 0.5))
-		{connectorsUsed.at(i) = ANDCONNECTOR;}
+		{connectorsUsed.push_back(ANDCONNECTOR);}
       else if((connectorValue < ORCONNECTOR + 0.5) && (connectorValue > ORCONNECTOR - 0.5))
-		{connectorsUsed.at(i) = ORCONNECTOR;}
+		{connectorsUsed.push_back(ORCONNECTOR);}
       else if((connectorValue < PIPECONN + 0.5) && (connectorValue > PIPECONN - 0.5))
-                {connectorsUsed.at(i) = PIPECONN;}
+                {connectorsUsed.push_back(PIPECONN);}
       else if((connectorValue < INPUTREDIR + 0.5) && (connectorValue > INPUTREDIR - 0.5))
-                {connectorsUsed.at(i) = INPUTREDIR;}
+                {connectorsUsed.push_back(INPUTREDIR);}
       else if((connectorValue < OUTPUTREDIR + 0.5) && (connectorValue > OUTPUTREDIR - 0.5))
-                {connectorsUsed.at(i) = OUTPUTREDIR;}
-      else{connectorsUsed.at(i) = SEMICOLON;}
+                {connectorsUsed.push_back(OUTPUTREDIR);}
+      else{connectorsUsed.push_back(SEMICOLON);}
         cout << "connector " << i << " = " << connectorsUsed.at(i) << endl;
 
     }
@@ -95,7 +96,7 @@ int main()
 
 
     //determines where connectors are and what they are
-    vector<double> connectorsUsed;
+    vector<int> connectorsUsed;
     ConnectorsUsed(commandLine, connectorsUsed);
     //if //if the last object is a connector get more input
 
@@ -148,14 +149,14 @@ cout << "success top: " << success << endl;
       else if(connectorsUsed.at(lineConnectorNum - 1) == SEMICOLON){cout << "processed as ;" << endl; run = true;} //;
       else{cout << "untracked connector: connect " << connectorsUsed.at(lineConnectorNum - 1) << ", success " << success << endl; run = true;}
 
-      int failure = -1;
+      int failure = 0;
       if(run == true){
         pid_t childPID; //fork section
         childPID = fork();
         if(childPID >= 0){ //fork was successful
           if(childPID == 0){ //child process
-            int failure = execvp(list[0], list);
-	   // cout << "success1: " << success << " failure: " << failure << endl;
+            failure = execvp(list[0], list);
+	    cout << "success1: " << success << " failure: " << failure << endl;
             if(failure == -1){success = false; perror("execvp failed"); exit(1);}
 	    //if(r == -1){success = false;}
           }
@@ -172,7 +173,7 @@ cout << "success top: " << success << endl;
       indvCommands = strtok_r(NULL, connectors, &currCmmdLine);
       lineConnectorNum++; //moving to the next connector in array
       if(failure == -1){success = false;}
-      //cout << "success2: " << success << " failure: " << failure << endl;
+      cout << "success2: " << success << " failure: " << failure << endl;
 
       if(indvCommands == NULL){break;}
     }
