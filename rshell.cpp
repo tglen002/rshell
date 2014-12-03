@@ -17,16 +17,18 @@ using namespace std;
 #define ANDCONNECTOR 0
 #define ORCONNECTOR 1
 #define PIPECONN 2
-#define INPUTREDIR 3
-#define OUTPUTREDIR 4
+//#define INPUTREDIR 3
+//#define OUTPUTREDIR 4
 #define SEMICOLON 5
 
 const string PROMPT = "$MONEY$: ";
 const char COMMENT = '#';
 const char NoRun[] = "exit";
 const char SpaceNoRun[] = " exit";
-const unsigned NumConnectors = 6;
-const string FullConnectors[] = {"&&", "||", "|", "<", ">", ";"};
+const unsigned NumConnectors = 4;
+const string FullConnectors[] = {"&&", "||", "|", ";"};
+
+int communicateOutput[2];
 
 void ConnectorsUsed(string commandLine, vector<int> &connectorsUsed){
     vector<double> connectorAndPos;
@@ -53,6 +55,7 @@ void ConnectorsUsed(string commandLine, vector<int> &connectorsUsed){
     }
     stable_sort(connectorAndPos.begin(), connectorAndPos.end());
     double connectorValue = 0.0;
+	cout << "connectorandPos size = " << connectorAndPos.size() << endl;
     for(unsigned i = 0; i < connectorAndPos.size(); i++){
       int temp = static_cast<int>(connectorAndPos.at(i));
       if(i < connectorAndPos.size() - 1){
@@ -69,10 +72,10 @@ void ConnectorsUsed(string commandLine, vector<int> &connectorsUsed){
 		{connectorsUsed.push_back(ORCONNECTOR);}
       else if((connectorValue < PIPECONN + 0.5) && (connectorValue > PIPECONN - 0.5))
                 {connectorsUsed.push_back(PIPECONN);}
-      else if((connectorValue < INPUTREDIR + 0.5) && (connectorValue > INPUTREDIR - 0.5))
+      /*else if((connectorValue < INPUTREDIR + 0.5) && (connectorValue > INPUTREDIR - 0.5))
                 {connectorsUsed.push_back(INPUTREDIR);}
       else if((connectorValue < OUTPUTREDIR + 0.5) && (connectorValue > OUTPUTREDIR - 0.5))
-                {connectorsUsed.push_back(OUTPUTREDIR);}
+                {connectorsUsed.push_back(OUTPUTREDIR);}*/
       else{connectorsUsed.push_back(SEMICOLON);}
         cout << "connector " << i << " = " << connectorsUsed.at(i) << endl;
 
@@ -80,24 +83,26 @@ void ConnectorsUsed(string commandLine, vector<int> &connectorsUsed){
 }
 
 //run
-int Run(char **list, char **additionalList, const vector<int> &connectors, unsigned connectorNum){
-	cout << "entering Run" << endl;
+int Run(char **list, /*char **additionalList, */const vector<int> &connectors, unsigned connectorNum){
 	int failure = 0;
-	int communication[2];
-	pipe(communication);
+	int saveSTDIN = dup(STDIN_FILENO);
+	int saveSTDOUT = dup(STDOUT_FILENO);
+	int communicateFailure[2];
+	pipe(communicateFailure);
+	int communicateInput[2];
+	pipe(communicateInput);
 	unsigned i = 0;
 	while(list[i] != NULL){
 		i++;
 	}
 	unsigned listLength = i + 1;
 	
-	cout << "connectorNum: " << connectorNum << endl;
         pid_t childPID; //fork section
         childPID = fork();
         if(childPID >= 0){ //fork was successful
           if(childPID == 0){ //child process
 	    unsigned inputRedirSymbol = listLength;
-	    cout << "length of list: " << inputRedirSymbol << endl;
+	    //cout << "length of list: " << inputRedirSymbol << endl;
 	    unsigned iterator = 0;
 	    string inputSymbol = "<";
 	    while(list[iterator] != NULL){
@@ -107,32 +112,23 @@ int Run(char **list, char **additionalList, const vector<int> &connectors, unsig
 		}
 		iterator++;
 	    }
-	    char **input = new char*[listLength + 1];
-	    unsigned inputLength = listLength + 1;
-	    for(unsigned i = 0; i < inputLength; i++){
-		input[i] = NULL;
-	    }
 	    if(inputRedirSymbol != listLength){
-		string redirInput = list[inputRedirSymbol + 1];
-		for(unsigned i = 0; i < inputRedirSymbol; i++){
-			input[i] = list[i];
-			list[i] = NULL;
-		}
+		string redirInput = list[inputRedirSymbol + 1];//input name
 		unsigned i = inputRedirSymbol;
 		unsigned iterator = 0;
 		while(list[i] != NULL){
-			cout << "list1: " << list[i] << endl;
-			list[iterator] = list[i];
-			list[i] = NULL;
+			list[i] = list[i+2];
+			list[i+2] = NULL;
+			//cout << "list1: " << list[iterator] << endl;
 			i++;
 			iterator++;
 		}
 		int fd_in = open(redirInput.c_str(), O_RDONLY, 0);
 		if(fd_in == -1){perror("input redirection error"); exit(1);}
-		dup2(fd_in, STDIN_FILENO);
+		if(dup2(fd_in, STDIN_FILENO) == -1){perror("dup2 of redirInput"); exit(1);}
 	    }
 	    unsigned outputRedirSymbol = listLength;
-	    cout << "length of edited list: " << listLength << endl;
+	    //cout << "length of edited list: " << listLength << endl;
 	    iterator = 0;
 	    string outputSymbol = ">";
 	    while(list[iterator] != NULL){
@@ -142,14 +138,9 @@ int Run(char **list, char **additionalList, const vector<int> &connectors, unsig
 		}
 		iterator++;
 	    }
-	    char **output = new char*[listLength + 1];
-	    unsigned outputLength = listLength + 1;
-	    for(unsigned i = 0; i < outputLength; i++){
-		output[i] = NULL;
-	    }
 	    if(outputRedirSymbol != listLength){
 		string redirOutput = list[outputRedirSymbol + 1];
-		cout << "redirOutput: " << redirOutput << endl;
+		//cout << "redirOutput: " << redirOutput << endl;
 		unsigned i = outputRedirSymbol;
 		unsigned iterator = 0;
 		while(list[i] != NULL){
@@ -163,18 +154,61 @@ int Run(char **list, char **additionalList, const vector<int> &connectors, unsig
 		int r = dup2(fd_out, STDOUT_FILENO);
 		if(r == -1){perror("dup2 output error"); exit(1);}
 	    }
-	    close(communication[0]);
+//cout << "getting to here?" << endl;
+            if((connectorNum - 1 >= 0) && (connectorNum - 1 < connectors.size())){
+        //cout << "entering connectorNum - 1 >= 0" << endl;
+                if(connectors.at(connectorNum - 1) == PIPECONN){
+                        cerr << "entering pipe conditionals: pipe before chunk" << endl;
+                        int r = write(communicateInput[1], &communicateOutput, sizeof(communicateOutput));
+			if(r == -1){perror("write communicateOutput to communicateInput failed"); exit(1);}
+			else if(r == 0){perror("communicateOutput was empty"); exit(1);}
+                        r = dup2(communicateInput[0], STDIN_FILENO);
+                        if(r == -1){perror("dup2 input error"); exit(1);}
+                }
+            }
+	    if(connectorNum < connectors.size()){
+		//cout << "entering connectNum < connectors.size()" << endl;
+		if(connectors.at(connectorNum) == PIPECONN){
+			cerr << "entering pipe conditionals: pipe after chunk" << endl;
+			int r = dup2(communicateOutput[1], STDOUT_FILENO);
+			if(r == -1){perror("dup2 output error"); exit(1);}
+	    	}
+	    }
+cerr << "getting to here2?" << endl;
+            if(close(communicateFailure[0]) == -1){perror("close communicateFailure[0] failed"); exit(1);}
+            if(close(communicateInput[0]) == -1){perror("close communicateInput[0] failed"); exit(1);}
+            if(close(communicateInput[1]) == -1){perror("close communicateInput[1] failed"); exit(1);}
+            if(close(communicateOutput[0]) == -1){perror("close communicateOutput[0] failed"); exit(1);}
+            if(close(communicateOutput[1]) == -1){perror("close communicateOutput[1] failed"); exit(1);}
+
             failure = execvp(list[0], list);
-	    write(communication[1], &failure, sizeof(failure));
-	    close(communication[1]);
             if(failure == -1){perror("execvp failed"); exit(1);}
+cerr << "getting to here3?" << endl;
+	    if(write(communicateFailure[1], &failure, sizeof(failure)) < 0)
+		{perror("write communicateFailure failured"); exit(1);}
+cerr << "getting to here4?" << endl;
+            //if(close(communicateFailure[0]) == -1){perror("close communicateFailure[0] failed"); exit(1);}
+            if(close(communicateFailure[1]) == -1){perror("close communicateFailure[1] failed"); exit(1);}
+            //if(close(communicateInput[0]) == -1){perror("close communicateInput[0] failed"); exit(1);}
+            //if(close(communicateInput[1]) == -1){perror("close communicateInput[1] failed"); exit(1);}
+            //if(close(communicateOutput[0]) == -1){perror("close communicateOutput[0] failed"); exit(1);}
+            //if(close(communicateOutput[1]) == -1){perror("close communicateOutput[1] failed"); exit(1);}
           }
           else{ //parent process
-	    close(communication[1]);
+cerr << "entering the parent process" << endl;
+	    if(close(communicateFailure[1]) == -1){perror("close communicateFailure[1] failed"); exit(1);}
             int r = wait(NULL);
             if(r == -1){perror("wait failed"); exit(1);}
-	    read(communication[0], &failure, sizeof(failure));
-	    close(communication[0]);
+	    cerr << "got back from the child process" << endl;
+	    if(read(communicateFailure[0], &failure, sizeof(failure)) == -1)
+		{perror("read communicateFailure failed"); exit(1);}
+cerr << "is my problem here?" << endl;
+	    if(close(communicateFailure[0]) == -1){perror("close communicateFailure[0] failed"); exit(1);}
+	    //if(close(communicateFailure[1]) == -1){perror("close communicateFailure[1] failed"); exit(1);}
+	    if(close(communicateInput[0]) == -1){perror("close communicateInput[0] failed"); exit(1);}
+	    if(close(communicateInput[1]) == -1){perror("close communicateInput[1] failed"); exit(1);}
+	    if(close(communicateOutput[0]) == -1){perror("close communicateOutput[0] failed"); exit(1);}
+	    if(close(communicateOutput[1]) == -1){perror("close communicateOutput[1] failed"); exit(1);}
 	    if(failure == 0){}
 	    else{failure = -1;}
           }
@@ -183,6 +217,8 @@ int Run(char **list, char **additionalList, const vector<int> &connectors, unsig
           perror("fork failed");
           exit(1);
         }
+	if(dup2(saveSTDIN, 0) == -1){perror("dup2 saveSTDIN failure"); exit(1);}
+        if(dup2(saveSTDOUT, 1) == -1){perror("dup2 saveSTDOUT failure"); exit(1);}
 	return failure;
 }
 
@@ -202,10 +238,10 @@ int main()
     indvCommands = strtok_r(charCmmdLine, connectors, &currCmmdLine);
 
     char **list = new char*[commandLine.length() + 1];
-    char **talkBetweenChunks = new char*[commandLine.length() + 1];
+    //char **talkBetweenChunks = new char*[commandLine.length() + 1];
     for(unsigned i = 0; i < commandLine.length() + 1; i++){ 
 	list[i] = '\0';
-	talkBetweenChunks[i] = '\0';
+	//talkBetweenChunks[i] = '\0';
     }
 
     //determines where connectors are and what they are
@@ -213,9 +249,13 @@ int main()
     ConnectorsUsed(commandLine, connectorsUsed);
     //if //if the last object is a connector get more input
 
-    string outputFile = "outputFile";
-    int previousOutput = creat(outputFile.c_str(), 0644);
-    close(previousOutput);
+    //int communicateOutput[2];
+    int r = pipe(communicateOutput);
+    if(r == -1){perror("pipe error"); exit(1);}
+
+    //string outputFile = "outputFile";
+    //int previousOutput = creat(outputFile.c_str(), 0644);
+    //close(previousOutput);
 
     bool success = true; //states whether previous command on same line was successful
     unsigned lineConnectorNum = 0; //location within the connector line array
@@ -249,8 +289,8 @@ cout << "command chunk: " << indvCommands << endl;
       }
       bool run = true;
 //cout << "success top: " << success << endl;
-      if(lineConnectorNum == 0){
-		cout << "entering line connector num == 0" << endl;
+      if(lineConnectorNum == 0){cout << "first chunk" << endl; run = true;}
+		/*cout << "entering line connector num == 0" << endl;
 		if(connectorsUsed.size() > 0){
 			if((connectorsUsed.at(lineConnectorNum) == INPUTREDIR) || 
 				(connectorsUsed.at(lineConnectorNum) == OUTPUTREDIR)){
@@ -259,22 +299,22 @@ cout << "command chunk: " << indvCommands << endl;
 			else{cout << "entering else" << endl; run = true;}
 		}
 		else{run = true;}
-      }
-      else if((lineConnectorNum < connectorsUsed.size())){
+      }*/
+      /*else if((lineConnectorNum < connectorsUsed.size())){
 	cout << "entering lineNum < size" << endl; 
 		if((connectorsUsed.at(lineConnectorNum) == INPUTREDIR) ||
                 	(connectorsUsed.at(lineConnectorNum) == OUTPUTREDIR)){
-			/*unsigned iterator = 0;
+			unsigned iterator = 0;
                 	while(list[iterator] != NULL){
                         	talkBetweenChunks[iterator] = list[iterator];
                                 iterator++;
                         }
-			run = false;*/
+			run = false;
 		}
-	}
-	if(((lineConnectorNum - 1) >= 0) && (lineConnectorNum - 1 < connectorsUsed.size())){
-	cout << "entering linNum - 1 >= 0" << endl;
-                if((connectorsUsed.at(lineConnectorNum - 1) == INPUTREDIR) ||
+	}*/
+	else if(((lineConnectorNum - 1) >= 0) && (lineConnectorNum - 1 < connectorsUsed.size())){
+		cout << "entering linNum - 1 >= 0" << endl;
+                /*if((connectorsUsed.at(lineConnectorNum - 1) == INPUTREDIR) ||
                 	(connectorsUsed.at(lineConnectorNum - 1) == OUTPUTREDIR)){
                 	char **switchArrays = new char*[commandLine.length() + 1];
                 	for(unsigned i = 0; i < commandLine.length() + 1; i++){
@@ -283,8 +323,8 @@ cout << "command chunk: " << indvCommands << endl;
                         	talkBetweenChunks[i] = switchArrays[i];
                 	}
                 	run = true;
-      		}
-		else if((connectorsUsed.at(lineConnectorNum - 1) == ANDCONNECTOR) && (success == true)){
+      		}*/
+		if((connectorsUsed.at(lineConnectorNum - 1) == ANDCONNECTOR) && (success == true)){
                 	cout << "processed as &&: success == true" << endl;
                 	run = true;
 		} //&&
@@ -319,8 +359,8 @@ cout << "command chunk: " << indvCommands << endl;
       }
       int failure = 0;
       if(run == true){
-	  cout << "entering run statement" << endl;
-	  failure = Run(list, talkBetweenChunks, connectorsUsed, lineConnectorNum);
+	  //cout << "entering run statement" << endl;
+	  failure = Run(list, /*talkBetweenChunks, */connectorsUsed, lineConnectorNum/*, communicateOutput*/);
       }
       indvCommands = strtok_r(NULL, connectors, &currCmmdLine);
       lineConnectorNum++; //moving to the next connector in array
@@ -330,7 +370,7 @@ cout << "command chunk: " << indvCommands << endl;
     }
     delete [] charCmmdLine;
     delete [] list;
-    delete [] talkBetweenChunks;
+    //delete [] talkBetweenChunks;
     //close(previousOutput);
   }
 
