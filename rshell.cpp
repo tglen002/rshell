@@ -1,16 +1,17 @@
-#include<stdio.h>
-#include<stdlib.h>
-#include<string.h>
-#include<unistd.h>
-#include<sys/types.h>
-#include<sys/wait.h>
-#include<sys/stat.h>
-#include<fcntl.h>
-#include<errno.h>
-#include<iostream>
-#include<string>
-#include<vector>
-#include<algorithm>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
+#include <sys/types.h>
+#include <sys/wait.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+#include <errno.h>
+#include <iostream>
+#include <string>
+#include <vector>
+#include <algorithm>
+#include <signal.h>
 
 using namespace std;
 
@@ -19,12 +20,19 @@ using namespace std;
 #define PIPECONN 2
 #define SEMICOLON 5
 
-const string PROMPT = "$MONEY$: ";
+const string PROMPT = " $MONEY$: ";
 const char COMMENT = '#';
 const char NoRun[] = "exit";
 const char SpaceNoRun[] = " exit";
 const unsigned NumConnectors = 4;
 const string FullConnectors[] = {"&&", "||", "|", ";"};
+
+void GetCWD(string &currPath){
+    char buf[1024];
+    if(!getcwd(buf, 1024)){perror("getcwd failed"); exit(1);}
+    currPath = buf;
+    return;
+}
 
 void ConnectorsUsed(string commandLine, vector<int> &connectorsUsed){
     vector<double> connectorAndPos;
@@ -68,10 +76,11 @@ void ConnectorsUsed(string commandLine, vector<int> &connectorsUsed){
                 {connectorsUsed.push_back(PIPECONN);}
       else{connectorsUsed.push_back(SEMICOLON);}
     }
+    return;
 }
 
 //run
-int Run(char **list, const vector<int> &connectors, unsigned connectorNum){
+int Run(char **list, char **execPathList, const vector<int> &connectors, unsigned connectorNum){
 	int failure = 0;
 	int communicateFailure[2];
 	pipe(communicateFailure);
@@ -164,8 +173,12 @@ int Run(char **list, const vector<int> &connectors, unsigned connectorNum){
 		if(r == -1){perror("append output pipe did not close"); exit(1);}
             }
             if(close(communicateFailure[0]) == -1){perror("close communicateFailure[0] failed"); exit(1);}
-            failure = execvp(list[0], list);
-            if(failure == -1){perror("execvp failed"); exit(1);}
+            for(unsigned i = 0; i < sizeof(execPathList); i++){
+		string execPath = execPathList[i];
+		execPath = execPath + "/" + list[0];
+		failure = execv(execPath.c_str(), list);
+	    }
+            if(failure == -1){perror("execv failed"); exit(1);}
             if(close(communicateFailure[1]) == -1){perror("close communicateFailure[1] failed"); exit(1);}
           }
           else{ //parent process
@@ -187,12 +200,41 @@ int Run(char **list, const vector<int> &connectors, unsigned connectorNum){
 	return failure;
 }
 
+static void c_handler(int signum){
+	signal(SIGINT, c_handler);
+	return;
+}
+
 
 int main()
 {
+  //catching ^C
+  struct sigaction c_sa;
+  c_sa.sa_handler = c_handler;
+  sigemptyset(&c_sa.sa_mask);
+  c_sa.sa_flags = SA_RESTART;
+
+  int r = sigaction(SIGINT, &c_sa, NULL);
+  if(r == -1){perror("sigaction failed"); exit(1);}
+
+  //grabbing path and parsing it for purposes of execv
+  string currPath = "";
+  GetCWD(currPath);
+  
+  char* bashExecutablePath = getenv("PATH");
+  char execPathDelims[] = {':'};
+  char** execPathList = new char*[20];
+  for(unsigned i = 0; i < sizeof(execPathList); i++){
+	execPathList[i] = NULL;
+  }
+  execPathList[0] = strtok(bashExecutablePath, execPathDelims);
+  for(unsigned i = 1; i < sizeof(execPathList); i++){
+	execPathList[i] = strtok(NULL, execPathDelims);
+  }
+
   while(true){ //for multiple command lines
     string commandLine;
-    cout << PROMPT;
+    cout << currPath << PROMPT;
     fflush(stdout);
     getline(cin,commandLine);
     char *charCmmdLine = new char[commandLine.length() + 1];
@@ -204,7 +246,7 @@ int main()
 
     char **list = new char*[commandLine.length() + 1];
     for(unsigned i = 0; i < commandLine.length() + 1; i++){ 
-	list[i] = '\0';
+	list[i] = NULL;
     }
 
     //determines where connectors are and what they are
@@ -270,9 +312,38 @@ int main()
 			run = true;
 		}
       }
+      if(strcmp(list[0],"cd") == 0){
+	run = false;
+	
+	if((list[1] == NULL)){
+		char* homePath = getenv("HOME");
+		if(homePath == NULL){perror("getenv failed"); exit(1);}
+		currPath = homePath;
+		int r = chdir(currPath.c_str());
+		if(r != 0){perror("chdir failed"); exit(1);}
+	}
+	else{
+		string newPath = currPath;
+                newPath = newPath + "/" + list[1];
+		
+		struct stat stat_buf;
+		if(stat(newPath.c_str(), &stat_buf) != -1){
+			if((S_ISDIR(stat_buf.st_mode)) == true){
+				newPath = newPath + "/";
+				int r = chdir(newPath.c_str());
+				if(r != 0){perror("chdir failed");}
+				GetCWD(currPath);
+			}
+			else{
+				cout << "cd: " << list[1] << ": Not a directory" << endl;
+			}
+		}
+		else{perror("stat failed"); exit(1);}
+	} 	
+      }	  
       int failure = 0;
       if(run == true){
-	  failure = Run(list, connectorsUsed, lineConnectorNum);
+	  failure = Run(list, execPathList, connectorsUsed, lineConnectorNum);
       }
       indvCommands = strtok_r(NULL, connectors, &currCmmdLine);
       lineConnectorNum++; //moving to the next connector in array
@@ -284,6 +355,6 @@ int main()
     delete [] list;
   }
 
-
+  delete [] execPathList;
   return 0;
 }
