@@ -27,7 +27,7 @@ It makes commands call through the use of the execvp function and uses a build i
 Bugs:
 <ol>
   <li>| does not work</li>
-  <li>cd does not function </li>
+  <li>cannot run rshell within rshell</li>
 </ol>
 
 How to run ls.cpp
