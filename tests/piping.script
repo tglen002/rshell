@@ -1,0 +1,143 @@
+Script started on Fri 05 Dec 2014 06:26:02 PM PST
+]0;glennhall@banach: ~/rshell/testsglennhall@banach:~/rshell/tests$ cd ..
+]0;glennhall@banach: ~/rshellglennhall@banach:~/rshell$ mk[Kake
+g++ rshell.cpp -Wall -Werror -ansi -pedantic -o rshell
+mkdir bin
+mkdir: cannot create directory `bin': File exists
+make: [rshell] Error 1 (ignored)
+cd bin; cp ../rshell .
+]0;glennhall@banach: ~/rshellglennhall@banach:~/rshell$ ./rshell 
+$MONEY$: ls > tmp
+$MONEY$: ls
+bin  cp.cpp		LICENSE  ls.cpp    notes	pipeNotes  rshell      src   tests    tmp
+cp   existingInputFile	ls	 Makefile  notesRSHELL	README.md  rshell.cpp  temp  Timer.h
+$MONEY$: rm tmp temp
+$MONEY$: ls
+bin  cp.cpp		LICENSE  ls.cpp    notes	pipeNotes  rshell      src    Timer.h
+cp   existingInputFile	ls	 Makefile  notesRSHELL	README.md  rshell.cpp  tests
+$MONEY$: ls > tmp
+$MONEY$: x cat tmp
+bin
+cp
+cp.cpp
+existingInputFile
+LICENSE
+ls
+ls.cpp
+Makefile
+notes
+notesRSHELL
+pipeNotes
+README.md
+rshell
+rshell.cpp
+src
+tests
+Timer.h
+tmp
+$MONEY$: echo junk > tmp
+$MONEY$: cat < tmp
+junk
+$MONEY$: ls -l -a >> tmp3
+open error: No such file or directory
+$MONEY$: cat t < tem  mp2
+input redirection error: No such file or directory
+$MONEY$: ls
+bin  cp.cpp		LICENSE  ls.cpp    notes	pipeNotes  rshell      src    Timer.h
+cp   existingInputFile	ls	 Makefile  notesRSHELL	README.md  rshell.cpp  tests  tmp
+$MONEY$: cat < tmp
+junk
+$MONEY$: ls -l -a > temp2
+$MONEY$: cat < tmp  emp2
+total 272
+drwxr-xr-x  6 glennhall bazhlab  4096 Dec  5 18:29 .
+drwxr-xr-x 29 glennhall bazhlab 36864 Dec  5 18:23 ..
+drwxr-xr-x  2 glennhall bazhlab  4096 Nov 25 10:15 bin
+-rwxr-xr-x  1 glennhall bazhlab 19462 Dec  5 17:15 cp
+-rw-r--r--  1 glennhall bazhlab  3277 Nov 11 23:19 cp.cpp
+-rw-r--r--  1 glennhall bazhlab   355 Nov 27 09:44 existingInputFile
+drwxr-xr-x  8 glennhall bazhlab  4096 Dec  5 18:24 .git
+-rw-r--r--  1 glennhall bazhlab   103 Nov 11 20:36 LICENSE
+-rwxr-xr-x  1 glennhall bazhlab 46966 Dec  5 17:15 ls
+-rw-r--r--  1 glennhall bazhlab  6178 Nov 12 00:14 ls.cpp
+-rw-r--r--  1 glennhall bazhlab   353 Nov 11 23:21 Makefile
+-rw-r--r--  1 glennhall bazhlab   248 Oct 28 15:49 notes
+-rw-r--r--  1 glennhall bazhlab  1518 Dec  3 14:50 notesRSHELL
+-rw-r--r--  1 glennhall bazhlab    93 Nov 27 09:33 pipeNotes
+-rw-r--r--  1 glennhall bazhlab  2721 Dec  5 18:23 README.md
+-rwxr-xr-x  1 glennhall bazhlab 60726 Dec  5 18:26 rshell
+-rw-r--r--  1 glennhall bazhlab  9995 Dec  5 18:20 rshell.cpp
+-rw-r--r--  1 glennhall bazhlab 28672 Dec  5 17:15 .rshell.cpp.swp
+drwxr-xr-x  2 glennhall bazhlab  4096 Nov 11 23:46 src
+-rw-r--r--  1 glennhall bazhlab     0 Dec  5 18:29 temp2
+drwxr-xr-x  2 glennhall bazhlab  4096 Dec  5 18:26 tests
+-rw-r--r--  1 glennhall bazhlab  1951 Nov  4 15:41 Timer.h
+-rw-r--r--  1 glennhall bazhlab     5 Dec  5 18:27 tmp
+$MONEY$: pwd > temp3
+$MONEY$: ls -l -a >>te   temp3
+$MONEY$: cat temp3
+/home/glennhall/rshell
+total 280
+drwxr-xr-x  6 glennhall bazhlab  4096 Dec  5 18:29 .
+drwxr-xr-x 29 glennhall bazhlab 36864 Dec  5 18:23 ..
+drwxr-xr-x  2 glennhall bazhlab  4096 Nov 25 10:15 bin
+-rwxr-xr-x  1 glennhall bazhlab 19462 Dec  5 17:15 cp
+-rw-r--r--  1 glennhall bazhlab  3277 Nov 11 23:19 cp.cpp
+-rw-r--r--  1 glennhall bazhlab   355 Nov 27 09:44 existingInputFile
+drwxr-xr-x  8 glennhall bazhlab  4096 Dec  5 18:24 .git
+-rw-r--r--  1 glennhall bazhlab   103 Nov 11 20:36 LICENSE
+-rwxr-xr-x  1 glennhall bazhlab 46966 Dec  5 17:15 ls
+-rw-r--r--  1 glennhall bazhlab  6178 Nov 12 00:14 ls.cpp
+-rw-r--r--  1 glennhall bazhlab   353 Nov 11 23:21 Makefile
+-rw-r--r--  1 glennhall bazhlab   248 Oct 28 15:49 notes
+-rw-r--r--  1 glennhall bazhlab  1518 Dec  3 14:50 notesRSHELL
+-rw-r--r--  1 glennhall bazhlab    93 Nov 27 09:33 pipeNotes
+-rw-r--r--  1 glennhall bazhlab  2721 Dec  5 18:23 README.md
+-rwxr-xr-x  1 glennhall bazhlab 60726 Dec  5 18:26 rshell
+-rw-r--r--  1 glennhall bazhlab  9995 Dec  5 18:20 rshell.cpp
+-rw-r--r--  1 glennhall bazhlab 28672 Dec  5 17:15 .rshell.cpp.swp
+drwxr-xr-x  2 glennhall bazhlab  4096 Nov 11 23:46 src
+-rw-r--r--  1 glennhall bazhlab  1352 Dec  5 18:29 temp2
+-rw-r--r--  1 glennhall bazhlab    23 Dec  5 18:29 temp3
+drwxr-xr-x  2 glennhall bazhlab  4096 Dec  5 18:26 tests
+-rw-r--r--  1 glennhall bazhlab  1951 Nov  4 15:41 Timer.h
+-rw-r--r--  1 glennhall bazhlab     5 Dec  5 18:27 tmp
+$MONEY$: tr a-z A-Z < temp3 > temp4
+$MONEY$: tail < input > temp5
+input redirection error: No such file or directory
+$MONEY$: tail < existingInputFile > temp4
+$MONEY$: tail -5 < existingInputFile > temp5
+$MONEY$: ta  head -10 < existingInputFile > temp5 6
+$MONEY$: cat temp4
+erj qarehgu hregoijqrv9hqerij0q hrb\
+q
+qegp[iqjer 9p93rgj0qehruvj
+
+qwoeihf quhergojqer[pog
+
+
+
+qergohq eirhg790qhg43
+qwoeigh e9rhb 913g9hqe0gj
+$MONEY$: cat temo p5
+
+
+
+qergohq eirhg790qhg43
+qwoeigh e9rhb 913g9hqe0gj
+$MONEY$: cat temp6
+adlghaosudhkbjsd
+adsf
+asdf
+asdf
+adsgrg
+h45
+hrhg
+eth
+4tn
+24yn4
+$MONEY$: exit
+]0;glennhall@banach: ~/rshellglennhall@banach:~/rshell$ e[Kexit
+exit
+
+Script done on Fri 05 Dec 2014 06:32:09 PM PST
