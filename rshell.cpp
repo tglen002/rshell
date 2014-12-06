@@ -80,7 +80,7 @@ void ConnectorsUsed(string commandLine, vector<int> &connectorsUsed){
 }
 
 //run
-int Run(char **list, char **execPathList, const vector<int> &connectors, unsigned connectorNum){
+int Run(char **list, char **execPathList, const vector<int> &connectors, unsigned connectorNum, unsigned pathLength){
 	int failure = 0;
 	int communicateFailure[2];
 	pipe(communicateFailure);
@@ -173,7 +173,7 @@ int Run(char **list, char **execPathList, const vector<int> &connectors, unsigne
 		if(r == -1){perror("append output pipe did not close"); exit(1);}
             }
             if(close(communicateFailure[0]) == -1){perror("close communicateFailure[0] failed"); exit(1);}
-            for(unsigned i = 0; i < sizeof(execPathList); i++){
+            for(unsigned i = 0; i < pathLength; i++){
 		string execPath = execPathList[i];
 		execPath = execPath + "/" + list[0];
 		failure = execv(execPath.c_str(), list);
@@ -222,15 +222,19 @@ int main()
   GetCWD(currPath);
   
   char* bashExecutablePath = getenv("PATH");
+  cout << "path: " << bashExecutablePath << endl;
   char execPathDelims[] = {':'};
   char** execPathList = new char*[20];
-  for(unsigned i = 0; i < sizeof(execPathList); i++){
+  for(unsigned i = 0; i < 20; i++){
 	execPathList[i] = NULL;
   }
   execPathList[0] = strtok(bashExecutablePath, execPathDelims);
-  for(unsigned i = 1; i < sizeof(execPathList); i++){
+  unsigned pathLength = 0;
+  for(unsigned i = 1; i < 20; i++){
 	execPathList[i] = strtok(NULL, execPathDelims);
+	if(execPathList[i] != NULL){pathLength++;}
   }
+  pathLength = pathLength + 2;
 
   while(true){ //for multiple command lines
     string commandLine;
@@ -343,7 +347,7 @@ int main()
       }	  
       int failure = 0;
       if(run == true){
-	  failure = Run(list, execPathList, connectorsUsed, lineConnectorNum);
+	  failure = Run(list, execPathList, connectorsUsed, lineConnectorNum, pathLength);
       }
       indvCommands = strtok_r(NULL, connectors, &currCmmdLine);
       lineConnectorNum++; //moving to the next connector in array
