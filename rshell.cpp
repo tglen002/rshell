@@ -222,7 +222,6 @@ int main()
   GetCWD(currPath);
   
   char* bashExecutablePath = getenv("PATH");
-  cout << "path: " << bashExecutablePath << endl;
   char execPathDelims[] = {':'};
   char** execPathList = new char*[20];
   for(unsigned i = 0; i < 20; i++){
